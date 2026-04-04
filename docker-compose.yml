@@ -1,9 +1,16 @@
 services:
   api:
     build: .
-    container_name: autoescola-api
+    container_name: agenda-api
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:///./data/autoescola.db
     volumes:
-      - ./:/app
+      - ./app:/app/app
+      - agenda_data:/app/data
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  agenda_data:
+    driver: local
