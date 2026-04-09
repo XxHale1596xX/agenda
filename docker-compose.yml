@@ -1,9 +1,54 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: agenda-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: agenda
+      MYSQL_USER: agenda
+      MYSQL_PASSWORD: agenda
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uagenda", "-pagenda"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   api:
     build: .
-    container_name: autoescola-api
+    container_name: agenda-api
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://agenda:agenda@mysql:3306/agenda
+      ADMIN_TOKEN: admin123
     volumes:
-      - ./:/app
+      - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: agenda-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      API_TARGET: http://api:8000
+      VITE_API_URL: ""
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:
+    driver: local
+  agenda_data:
+    driver: local
