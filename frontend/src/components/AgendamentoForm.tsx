@@ -56,24 +56,24 @@ export function AgendamentoForm({ initial, loading, onSubmit, onCancel }: Props)
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="label">Aluno</label>
-          <input {...register('aluno')} className="input" placeholder="Nome completo" />
-          {errors.aluno && <p className="text-xs text-red-500 mt-1">{errors.aluno.message}</p>}
+          <label htmlFor="aluno" className="label">Aluno</label>
+          <input id="aluno" {...register('aluno')} className="input" placeholder="Nome completo" aria-invalid={!!errors.aluno} />
+          {errors.aluno && <p className="text-xs text-red-500 mt-1" role="alert">{errors.aluno.message}</p>}
         </div>
         <div>
-          <label className="label">Instrutor</label>
-          <input {...register('instrutor')} className="input" placeholder="Nome do instrutor" />
-          {errors.instrutor && <p className="text-xs text-red-500 mt-1">{errors.instrutor.message}</p>}
+          <label htmlFor="instrutor" className="label">Instrutor</label>
+          <input id="instrutor" {...register('instrutor')} className="input" placeholder="Nome do instrutor" aria-invalid={!!errors.instrutor} />
+          {errors.instrutor && <p className="text-xs text-red-500 mt-1" role="alert">{errors.instrutor.message}</p>}
         </div>
         <div>
-          <label className="label">Data da Aula</label>
-          <input {...register('data_aula')} type="date" className="input" />
-          {errors.data_aula && <p className="text-xs text-red-500 mt-1">{errors.data_aula.message}</p>}
+          <label htmlFor="data_aula" className="label">Data da Aula</label>
+          <input id="data_aula" {...register('data_aula')} type="date" className="input" aria-invalid={!!errors.data_aula} />
+          {errors.data_aula && <p className="text-xs text-red-500 mt-1" role="alert">{errors.data_aula.message}</p>}
         </div>
         <div>
-          <label className="label">Horário</label>
-          <input {...register('hora_aula')} type="time" className="input" />
-          {errors.hora_aula && <p className="text-xs text-red-500 mt-1">{errors.hora_aula.message}</p>}
+          <label htmlFor="hora_aula" className="label">Horário</label>
+          <input id="hora_aula" {...register('hora_aula')} type="time" className="input" aria-invalid={!!errors.hora_aula} />
+          {errors.hora_aula && <p className="text-xs text-red-500 mt-1" role="alert">{errors.hora_aula.message}</p>}
         </div>
       </div>
 

@@ -12,10 +12,11 @@ export function FilterBar({ filter, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative flex-1 min-w-[180px]">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden="true" />
         <input
           className="input pl-9"
           placeholder="Filtrar por instrutor..."
+          aria-label="Filtrar por instrutor"
           value={filter.instrutor ?? ''}
           onChange={e => onChange({ ...filter, instrutor: e.target.value || undefined })}
         />

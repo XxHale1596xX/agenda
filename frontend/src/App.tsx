@@ -28,7 +28,7 @@ import {
 } from './hooks/useUsuarios'
 import { useAdminSession } from './hooks/useAdminSession'
 import { usuariosApi } from './api/usuarios'
-import type { Agendamento, AgendamentosFilter, Usuario, UsuarioMasked } from './types'
+import type { Agendamento, AgendamentosFilter, Usuario, UsuarioMasked, UsuarioPayload, UsuarioUpdate } from './types'
 import { cn } from './lib/utils'
 
 const queryClient = new QueryClient({
@@ -74,13 +74,17 @@ function AppContent() {
   const todayCount = all.filter(a => a.data_aula === today).length
 
   // ── Handlers Agendamentos ──────────────────────────────────────────────────
+  function errMsg(e: unknown, fallback: string) {
+    return e instanceof Error ? e.message : fallback
+  }
+
   async function handleCreate(values: Omit<Agendamento, 'id'>) {
     try {
       await create.mutateAsync({ ...values, hora_aula: `${values.hora_aula}:00` })
       toast('Agendamento criado com sucesso!')
       setCreateOpen(false)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao criar agendamento', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao criar agendamento'), 'error')
     }
   }
 
@@ -90,8 +94,8 @@ function AppContent() {
       await update.mutateAsync({ id: editTarget.id, payload: { ...values, hora_aula: `${values.hora_aula}:00` } })
       toast('Agendamento atualizado!')
       setEditTarget(null)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao atualizar', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao atualizar'), 'error')
     }
   }
 
@@ -101,19 +105,19 @@ function AppContent() {
       await remove.mutateAsync(deleteTarget.id)
       toast('Agendamento removido.')
       setDeleteTarget(null)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao remover', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao remover'), 'error')
     }
   }
 
   // ── Handlers Usuários ──────────────────────────────────────────────────────
-  async function handleCreateUsuario(values: any) {
+  async function handleCreateUsuario(values: UsuarioPayload) {
     try {
       await createUsuario.mutateAsync(values)
       toast('Usuário cadastrado com sucesso!')
       setCreateUsuarioOpen(false)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao cadastrar', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao cadastrar'), 'error')
     }
   }
 
@@ -126,14 +130,15 @@ function AppContent() {
     }
   }
 
-  async function handleUpdateUsuario(values: any) {
+  async function handleUpdateUsuario(values: UsuarioPayload) {
     if (!editUsuario) return
+    const payload: UsuarioUpdate = { nome: values.nome, email: values.email, telefone: values.telefone }
     try {
-      await updateUsuario.mutateAsync({ id: editUsuario.id, payload: values })
+      await updateUsuario.mutateAsync({ id: editUsuario.id, payload })
       toast('Usuário atualizado!')
       setEditUsuario(null)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao atualizar', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao atualizar'), 'error')
     }
   }
 
@@ -143,8 +148,8 @@ function AppContent() {
       await deleteUsuarioMut.mutateAsync(deleteUsuario.id)
       toast('Usuário removido.')
       setDeleteUsuario(null)
-    } catch (e: any) {
-      toast(e.message ?? 'Erro ao remover', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro ao remover'), 'error')
     }
   }
 
@@ -152,8 +157,8 @@ function AppContent() {
     try {
       await updateUsuario.mutateAsync({ id: u.id, payload: { ativo: !u.ativo } })
       toast(u.ativo ? 'Usuário desativado.' : 'Usuário reativado.')
-    } catch (e: any) {
-      toast(e.message ?? 'Erro', 'error')
+    } catch (e: unknown) {
+      toast(errMsg(e, 'Erro'), 'error')
     }
   }
 
@@ -182,7 +187,7 @@ function AppContent() {
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <button onClick={logout} className="btn-ghost text-slate-500 text-xs gap-1">
+              <button onClick={logout} aria-label="Sair do admin" className="btn-ghost text-slate-500 text-xs gap-1">
                 <LogOut size={14} />
                 <span className="hidden sm:inline">Sair do admin</span>
               </button>
@@ -285,14 +290,14 @@ function AppContent() {
               <div className="flex-1">
                 <FilterBar filter={filter} onChange={setFilter} />
               </div>
-              <button onClick={() => refetch()} disabled={isFetching} className="btn-ghost shrink-0" title="Atualizar">
+              <button onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar agendamentos" className="btn-ghost shrink-0">
                 <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
               </button>
             </div>
             {isError ? (
               <div className="py-16 text-center text-red-500 text-sm">Não foi possível conectar à API.</div>
             ) : (
-              <AgendamentoTable agendamentos={agendamentos} onEdit={setEditTarget} onDelete={setDeleteTarget} />
+              <AgendamentoTable agendamentos={agendamentos} hasFilters={!!(filter.instrutor || filter.data_aula)} onEdit={setEditTarget} onDelete={setDeleteTarget} />
             )}
             {agendamentos.length > 0 && (
               <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400">

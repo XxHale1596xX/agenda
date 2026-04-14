@@ -29,17 +29,21 @@ export function AdminLoginModal({ onLogin, loading, error }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <label htmlFor="admin-password" className="sr-only">Senha de administrador</label>
             <input
+              id="admin-password"
               type="password"
-              className="input pl-9 text-center tracking-widest"
+              className={`input pl-9 text-center tracking-widest ${error ? 'border-red-400 focus:ring-red-300' : ''}`}
               placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoFocus
+              aria-invalid={!!error}
+              aria-describedby={error ? 'admin-login-error' : undefined}
             />
           </div>
           {error && (
-            <p className="text-sm text-red-500 font-medium">{error}</p>
+            <p id="admin-login-error" className="text-sm text-red-500 font-medium" role="alert">{error}</p>
           )}
           <button type="submit" disabled={loading || !password} className="btn-primary w-full justify-center">
             {loading ? <Loader2 size={15} className="animate-spin" /> : null}

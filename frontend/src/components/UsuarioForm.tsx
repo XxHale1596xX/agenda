@@ -64,45 +64,53 @@ export function UsuarioForm({ initial, loading, onSubmit, onCancel }: Props) {
 
   const cpfOk = validateCPF(cpfValue ?? '')
 
+  const cpfDigitCount = (cpfValue ?? '').replace(/\D/g, '').length
+
   return (
     <form onSubmit={handleSubmit(handleSubmitForm)} className="space-y-4">
       <div>
-        <label className="label">Nome completo</label>
-        <input {...register('nome')} className="input" placeholder="Nome do aluno" />
-        {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
+        <label htmlFor="nome" className="label">Nome completo</label>
+        <input id="nome" {...register('nome')} className="input" placeholder="Nome do aluno" aria-invalid={!!errors.nome} />
+        {errors.nome && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nome.message}</p>}
       </div>
 
       <div>
-        <label className="label">CPF</label>
+        <label htmlFor="cpf" className="label">CPF</label>
         <div className="relative">
           <input
+            id="cpf"
             {...register('cpf')}
             onChange={handleCPFChange}
-            className="input pr-10"
+            className={`input pr-10 ${errors.cpf ? 'border-red-400 focus:ring-red-300' : ''}`}
             placeholder="000.000.000-00"
             maxLength={14}
             inputMode="numeric"
-            disabled={!!initial}  // CPF não pode ser alterado após cadastro
+            disabled={!!initial}
+            aria-invalid={!!errors.cpf}
+            aria-describedby={errors.cpf ? 'cpf-error' : undefined}
           />
-          {cpfValue && cpfValue.length >= 14 && (
-            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-lg ${cpfOk ? 'text-green-500' : 'text-red-500'}`}>
+          {cpfDigitCount >= 11 && (
+            <span
+              aria-hidden="true"
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-lg ${cpfOk ? 'text-green-500' : 'text-red-500'}`}
+            >
               {cpfOk ? '✓' : '✗'}
             </span>
           )}
         </div>
-        {errors.cpf && <p className="text-xs text-red-500 mt-1">{errors.cpf.message}</p>}
+        {errors.cpf && <p id="cpf-error" className="text-xs text-red-500 mt-1" role="alert">{errors.cpf.message}</p>}
         {initial && <p className="text-xs text-slate-400 mt-1">O CPF não pode ser alterado.</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="label">E-mail <span className="text-slate-400 font-normal">(opcional)</span></label>
-          <input {...register('email')} type="email" className="input" placeholder="email@exemplo.com" />
-          {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
+          <label htmlFor="email" className="label">E-mail <span className="text-slate-400 font-normal">(opcional)</span></label>
+          <input id="email" {...register('email')} type="email" className="input" placeholder="email@exemplo.com" aria-invalid={!!errors.email} />
+          {errors.email && <p className="text-xs text-red-500 mt-1" role="alert">{errors.email.message}</p>}
         </div>
         <div>
-          <label className="label">Telefone <span className="text-slate-400 font-normal">(opcional)</span></label>
-          <input {...register('telefone')} className="input" placeholder="(11) 99999-9999" />
+          <label htmlFor="telefone" className="label">Telefone <span className="text-slate-400 font-normal">(opcional)</span></label>
+          <input id="telefone" {...register('telefone')} className="input" placeholder="(11) 99999-9999" />
         </div>
       </div>
 

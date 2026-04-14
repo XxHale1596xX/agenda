@@ -4,6 +4,7 @@ import { formatDate, formatTime } from '../lib/utils'
 
 interface Props {
   agendamentos: Agendamento[]
+  hasFilters?: boolean
   onEdit: (a: Agendamento) => void
   onDelete: (a: Agendamento) => void
 }
@@ -27,13 +28,17 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
-export function AgendamentoTable({ agendamentos, onEdit, onDelete }: Props) {
+export function AgendamentoTable({ agendamentos, hasFilters, onEdit, onDelete }: Props) {
   if (agendamentos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-400">
         <Calendar size={48} className="mb-3 opacity-40" />
-        <p className="text-base font-medium">Nenhum agendamento encontrado</p>
-        <p className="text-sm">Crie um novo agendamento acima</p>
+        <p className="text-base font-medium">
+          {hasFilters ? 'Nenhum resultado para os filtros aplicados' : 'Nenhum agendamento encontrado'}
+        </p>
+        <p className="text-sm">
+          {hasFilters ? 'Tente ajustar ou limpar os filtros' : 'Crie um novo agendamento acima'}
+        </p>
       </div>
     )
   }
@@ -85,14 +90,14 @@ export function AgendamentoTable({ agendamentos, onEdit, onDelete }: Props) {
                     <button
                       onClick={() => onEdit(a)}
                       className="btn-ghost p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                      title="Editar"
+                      aria-label={`Editar agendamento de ${a.aluno}`}
                     >
                       <Pencil size={15} />
                     </button>
                     <button
                       onClick={() => onDelete(a)}
                       className="btn-ghost p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
-                      title="Excluir"
+                      aria-label={`Excluir agendamento de ${a.aluno}`}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -119,10 +124,10 @@ export function AgendamentoTable({ agendamentos, onEdit, onDelete }: Props) {
                 </div>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => onEdit(a)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                <button onClick={() => onEdit(a)} aria-label={`Editar agendamento de ${a.aluno}`} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
                   <Pencil size={15} />
                 </button>
-                <button onClick={() => onDelete(a)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+                <button onClick={() => onDelete(a)} aria-label={`Excluir agendamento de ${a.aluno}`} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
                   <Trash2 size={15} />
                 </button>
               </div>

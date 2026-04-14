@@ -20,10 +20,11 @@ export function UsuarioTable({ usuarios, busca, onBuscaChange, onEdit, onDelete,
     <div>
       <div className="p-4 border-b border-slate-100">
         <div className="relative max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden="true" />
           <input
             className="input pl-9"
             placeholder="Buscar por nome ou CPF..."
+            aria-label="Buscar usuários por nome ou CPF"
             value={busca}
             onChange={e => onBuscaChange(e.target.value)}
           />
@@ -33,8 +34,12 @@ export function UsuarioTable({ usuarios, busca, onBuscaChange, onEdit, onDelete,
       {usuarios.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <UserCheck size={48} className="mb-3 opacity-40" />
-          <p className="text-base font-medium">Nenhum usuário encontrado</p>
-          <p className="text-sm">Cadastre o primeiro usuário acima</p>
+          <p className="text-base font-medium">
+            {busca ? 'Nenhum usuário encontrado para essa busca' : 'Nenhum usuário cadastrado'}
+          </p>
+          <p className="text-sm">
+            {busca ? 'Tente um nome ou CPF diferente' : 'Cadastre o primeiro usuário acima'}
+          </p>
         </div>
       ) : (
         <>
@@ -84,13 +89,13 @@ export function UsuarioTable({ usuarios, busca, onBuscaChange, onEdit, onDelete,
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
-                        <button onClick={() => onToggleAtivo(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50" title={u.ativo ? 'Desativar' : 'Ativar'}>
+                        <button onClick={() => onToggleAtivo(u)} aria-label={u.ativo ? `Desativar ${u.nome}` : `Ativar ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50">
                           {u.ativo ? <UserX size={15} /> : <UserCheck size={15} />}
                         </button>
-                        <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50" title="Editar">
+                        <button onClick={() => onEdit(u)} aria-label={`Editar ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
                           <Pencil size={15} />
                         </button>
-                        <button onClick={() => onDelete(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50" title="Excluir">
+                        <button onClick={() => onDelete(u)} aria-label={`Excluir ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -123,13 +128,13 @@ export function UsuarioTable({ usuarios, busca, onBuscaChange, onEdit, onDelete,
                   <p className="text-xs text-slate-400 mt-1 ml-11">{u.email_mascarado}</p>
                 )}
                 <div className="flex justify-end gap-1 mt-2">
-                  <button onClick={() => onToggleAtivo(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50">
+                  <button onClick={() => onToggleAtivo(u)} aria-label={u.ativo ? `Desativar ${u.nome}` : `Ativar ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50">
                     {u.ativo ? <UserX size={15} /> : <UserCheck size={15} />}
                   </button>
-                  <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                  <button onClick={() => onEdit(u)} aria-label={`Editar ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
                     <Pencil size={15} />
                   </button>
-                  <button onClick={() => onDelete(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+                  <button onClick={() => onDelete(u)} aria-label={`Excluir ${u.nome}`} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
                     <Trash2 size={15} />
                   </button>
                 </div>
