@@ -16,12 +16,13 @@ type FormValues = z.infer<typeof schema>
 
 interface Props {
   initial?: Agendamento
+  slotDefault?: { data_aula: string; hora_aula: string }
   loading: boolean
   onSubmit: (values: FormValues) => void
   onCancel: () => void
 }
 
-export function AgendamentoForm({ initial, loading, onSubmit, onCancel }: Props) {
+export function AgendamentoForm({ initial, slotDefault, loading, onSubmit, onCancel }: Props) {
   const {
     register,
     handleSubmit,
@@ -36,7 +37,12 @@ export function AgendamentoForm({ initial, loading, onSubmit, onCancel }: Props)
           data_aula: initial.data_aula,
           hora_aula: initial.hora_aula.slice(0, 5),
         }
-      : {},
+      : {
+          aluno: '',
+          instrutor: '',
+          data_aula: slotDefault?.data_aula ?? '',
+          hora_aula: slotDefault?.hora_aula ?? '',
+        },
   })
 
   useEffect(() => {
@@ -48,9 +54,14 @@ export function AgendamentoForm({ initial, loading, onSubmit, onCancel }: Props)
         hora_aula: initial.hora_aula.slice(0, 5),
       })
     } else {
-      reset({ aluno: '', instrutor: '', data_aula: '', hora_aula: '' })
+      reset({
+        aluno: '',
+        instrutor: '',
+        data_aula: slotDefault?.data_aula ?? '',
+        hora_aula: slotDefault?.hora_aula ?? '',
+      })
     }
-  }, [initial, reset])
+  }, [initial, slotDefault, reset])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

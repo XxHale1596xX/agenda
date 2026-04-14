@@ -11,6 +11,7 @@ import { AgendamentoTable } from './components/AgendamentoTable'
 import { DeleteDialog } from './components/DeleteDialog'
 import { FilterBar } from './components/FilterBar'
 import { CalendarioMensal } from './components/CalendarioMensal'
+import { CalendarioRBC } from './components/CalendarioRBC'
 import { AdminLoginModal } from './components/AdminLoginModal'
 import { UsuarioForm } from './components/UsuarioForm'
 import { UsuarioTable } from './components/UsuarioTable'
@@ -28,6 +29,7 @@ import {
 } from './hooks/useUsuarios'
 import { useAdminSession } from './hooks/useAdminSession'
 import { usuariosApi } from './api/usuarios'
+import { format } from 'date-fns'
 import type { Agendamento, AgendamentosFilter, Usuario, UsuarioMasked, UsuarioPayload, UsuarioUpdate } from './types'
 import { cn } from './lib/utils'
 
@@ -46,6 +48,7 @@ function AppContent() {
   // ── Agendamentos ───────────────────────────────────────────────────────────
   const [filter, setFilter] = useState<AgendamentosFilter>({})
   const [createOpen, setCreateOpen] = useState(false)
+  const [slotDefault, setSlotDefault] = useState<{ data_aula: string; hora_aula: string } | undefined>()
   const [editTarget, setEditTarget] = useState<Agendamento | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Agendamento | null>(null)
 
@@ -78,11 +81,24 @@ function AppContent() {
     return e instanceof Error ? e.message : fallback
   }
 
+  function handleSelectSlot(start: Date) {
+    setSlotDefault({
+      data_aula: format(start, 'yyyy-MM-dd'),
+      hora_aula: format(start, 'HH:mm'),
+    })
+    setCreateOpen(true)
+  }
+
+  function handleCloseCreate() {
+    setCreateOpen(false)
+    setSlotDefault(undefined)
+  }
+
   async function handleCreate(values: Omit<Agendamento, 'id'>) {
     try {
       await create.mutateAsync({ ...values, hora_aula: `${values.hora_aula}:00` })
       toast('Agendamento criado com sucesso!')
-      setCreateOpen(false)
+      handleCloseCreate()
     } catch (e: unknown) {
       toast(errMsg(e, 'Erro ao criar agendamento'), 'error')
     }
@@ -278,8 +294,11 @@ function AppContent() {
 
         {/* ── Calendário ──────────────────────────────────────────────────── */}
         {tab === 'calendario' && (
-          <div className="card p-6">
-            <CalendarioMensal />
+          <div className="card p-4">
+            <CalendarioRBC
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={setEditTarget}
+            />
           </div>
         )}
 
@@ -373,8 +392,8 @@ function AppContent() {
       </main>
 
       {/* ── Modals Agendamentos ──────────────────────────────────────────── */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Novo Agendamento">
-        <AgendamentoForm loading={create.isPending} onSubmit={handleCreate} onCancel={() => setCreateOpen(false)} />
+      <Modal open={createOpen} onClose={handleCloseCreate} title="Novo Agendamento">
+        <AgendamentoForm slotDefault={slotDefault} loading={create.isPending} onSubmit={handleCreate} onCancel={handleCloseCreate} />
       </Modal>
       <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Editar Agendamento">
         <AgendamentoForm initial={editTarget ?? undefined} loading={update.isPending} onSubmit={handleUpdate} onCancel={() => setEditTarget(null)} />
