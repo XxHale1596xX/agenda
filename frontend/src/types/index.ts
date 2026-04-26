@@ -75,3 +75,64 @@ export type DisponibilidadeDia = Record<string, StatusSlot>
 
 /** { "2026-04-07": { "08:00": "disponivel", ... }, ... } */
 export type DisponibilidadeMes = Record<string, DisponibilidadeDia>
+
+// ── Instrutores ───────────────────────────────────────────────────────────────
+
+export interface Instrutor {
+  id: number
+  nome: string
+  cpf: string
+  email: string | null
+  telefone: string | null
+  categorias: string   // "B" ou "A,B"
+  ativo: boolean
+  criado_em: string
+}
+
+export interface InstrutorPayload {
+  nome: string
+  cpf: string
+  email?: string
+  telefone?: string
+  categorias: string
+}
+
+export interface InstrutorUpdate {
+  nome?: string
+  email?: string
+  telefone?: string
+  categorias?: string
+  ativo?: boolean
+}
+
+// ── Veículos ─────────────────────────────────────────────────────────────────
+
+export interface Veiculo {
+  id: number
+  placa: string
+  modelo: string
+  marca: string
+  ano: number | null
+  categoria: string
+  ativo: boolean
+  km_atual: number
+  criado_em: string
+}
+
+export interface VeiculoPayload {
+  placa: string
+  modelo: string
+  marca: string
+  ano?: number
+  categoria: string
+  km_atual?: number
+}
+
+export interface VeiculoUpdate {
+  modelo?: string
+  marca?: string
+  ano?: number
+  categoria?: string
+  ativo?: boolean
+  km_atual?: number
+}

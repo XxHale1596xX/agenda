@@ -13,6 +13,8 @@ export default defineConfig({
       '/bloqueios': apiTarget,
       '/disponibilidade': apiTarget,
       '/usuarios': apiTarget,
+      '/instrutores': apiTarget,
+      '/veiculos': apiTarget,
       '/health': apiTarget,
     },
   },

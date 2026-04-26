@@ -1,107 +1,99 @@
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  Plus, Car, RefreshCw, CalendarDays, Users, Clock,
-  CalendarRange, List, ShieldCheck, LogOut, UserPlus,
-} from 'lucide-react'
+import { format } from 'date-fns'
+import { Plus, UserPlus, RefreshCw } from 'lucide-react'
 import { ToastProvider, useToast } from './components/ui/Toast'
 import { Modal } from './components/ui/Modal'
+import { Sidebar } from './components/layout/Sidebar'
+import { TopBar } from './components/layout/TopBar'
+import { Dashboard } from './components/pages/Dashboard'
+import { InstrutoresPage } from './components/pages/InstrutoresPage'
+import { VeiculosPage } from './components/pages/VeiculosPage'
+import { ComingSoon } from './components/pages/ComingSoon'
 import { AgendamentoForm } from './components/AgendamentoForm'
 import { AgendamentoTable } from './components/AgendamentoTable'
 import { DeleteDialog } from './components/DeleteDialog'
 import { FilterBar } from './components/FilterBar'
-import { CalendarioMensal } from './components/CalendarioMensal'
 import { CalendarioRBC } from './components/CalendarioRBC'
+import { CalendarioMensal } from './components/CalendarioMensal'
 import { AdminLoginModal } from './components/AdminLoginModal'
 import { UsuarioForm } from './components/UsuarioForm'
 import { UsuarioTable } from './components/UsuarioTable'
 import {
-  useAgendamentos,
-  useCreateAgendamento,
-  useUpdateAgendamento,
-  useDeleteAgendamento,
+  useAgendamentos, useCreateAgendamento,
+  useUpdateAgendamento, useDeleteAgendamento,
 } from './hooks/useAgendamentos'
-import {
-  useUsuarios,
-  useCreateUsuario,
-  useUpdateUsuario,
-  useDeleteUsuario,
-} from './hooks/useUsuarios'
+import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from './hooks/useUsuarios'
 import { useAdminSession } from './hooks/useAdminSession'
 import { usuariosApi } from './api/usuarios'
-import { format } from 'date-fns'
-import type { Agendamento, AgendamentosFilter, Usuario, UsuarioMasked, UsuarioPayload, UsuarioUpdate } from './types'
+import type {
+  Agendamento, AgendamentosFilter,
+  Usuario, UsuarioMasked, UsuarioPayload, UsuarioUpdate,
+} from './types'
 import { cn } from './lib/utils'
+
+export type NavPage =
+  | 'dashboard' | 'calendario' | 'agendamentos'
+  | 'alunos' | 'instrutores' | 'veiculos'
+  | 'financeiro' | 'pedagogico' | 'comunicacao' | 'relatorios'
+  | 'admin'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 })
 
-type Tab = 'calendario' | 'agendamentos' | 'admin'
-type AdminSubTab = 'disponibilidade' | 'usuarios'
-
+// ── Inner app (inside providers) ─────────────────────────────────────────────
 function AppContent() {
   const { toast } = useToast()
-  const [tab, setTab] = useState<Tab>('calendario')
+  const [page, setPage] = useState<NavPage>('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // ── Admin ──────────────────────────────────────────────────────────────────
+  const { adminToken, isAdmin, login, logout, loading: adminLoading, error: adminError } = useAdminSession()
+  type AdminSubTab = 'disponibilidade' | 'usuarios'
   const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('disponibilidade')
 
   // ── Agendamentos ───────────────────────────────────────────────────────────
   const [filter, setFilter] = useState<AgendamentosFilter>({})
-  const [createOpen, setCreateOpen] = useState(false)
+  const [createOpen, setCreateOpen]   = useState(false)
   const [slotDefault, setSlotDefault] = useState<{ data_aula: string; hora_aula: string } | undefined>()
-  const [editTarget, setEditTarget] = useState<Agendamento | null>(null)
+  const [editTarget,  setEditTarget]  = useState<Agendamento | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Agendamento | null>(null)
 
   const { data: agendamentos = [], isFetching, refetch, isError } = useAgendamentos(filter)
-  const create = useCreateAgendamento()
-  const update = useUpdateAgendamento()
-  const remove = useDeleteAgendamento()
+  const create  = useCreateAgendamento()
+  const update  = useUpdateAgendamento()
+  const remove  = useDeleteAgendamento()
 
-  // ── Usuários (restrito ao admin) ───────────────────────────────────────────
-  const [buscaUsuario, setBuscaUsuario] = useState('')
+  // ── Usuários ───────────────────────────────────────────────────────────────
+  const [buscaUsuario, setBuscaUsuario]       = useState('')
   const [createUsuarioOpen, setCreateUsuarioOpen] = useState(false)
-  const [editUsuario, setEditUsuario] = useState<Usuario | null>(null)
-  const [deleteUsuario, setDeleteUsuario] = useState<UsuarioMasked | null>(null)
+  const [editUsuario, setEditUsuario]         = useState<Usuario | null>(null)
+  const [deleteUsuario, setDeleteUsuario]     = useState<UsuarioMasked | null>(null)
 
   const { data: usuarios = [] } = useUsuarios(buscaUsuario || undefined)
-  const createUsuario = useCreateUsuario()
-  const updateUsuario = useUpdateUsuario()
+  const createUsuario   = useCreateUsuario()
+  const updateUsuario   = useUpdateUsuario()
   const deleteUsuarioMut = useDeleteUsuario()
 
-  // ── Admin ──────────────────────────────────────────────────────────────────
-  const { adminToken, isAdmin, login, logout, loading: adminLoading, error: adminError } = useAdminSession()
-
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const { data: all = [] } = useAgendamentos()
-  const today = new Date().toISOString().slice(0, 10)
-  const todayCount = all.filter(a => a.data_aula === today).length
-
-  // ── Handlers Agendamentos ──────────────────────────────────────────────────
-  function errMsg(e: unknown, fallback: string) {
-    return e instanceof Error ? e.message : fallback
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function errMsg(e: unknown, fb: string) {
+    return e instanceof Error ? e.message : fb
   }
 
+  // ── Agendamento handlers ───────────────────────────────────────────────────
   function handleSelectSlot(start: Date) {
-    setSlotDefault({
-      data_aula: format(start, 'yyyy-MM-dd'),
-      hora_aula: format(start, 'HH:mm'),
-    })
+    setSlotDefault({ data_aula: format(start, 'yyyy-MM-dd'), hora_aula: format(start, 'HH:mm') })
     setCreateOpen(true)
   }
-
-  function handleCloseCreate() {
-    setCreateOpen(false)
-    setSlotDefault(undefined)
-  }
+  function handleCloseCreate() { setCreateOpen(false); setSlotDefault(undefined) }
 
   async function handleCreate(values: Omit<Agendamento, 'id'>) {
     try {
       await create.mutateAsync({ ...values, hora_aula: `${values.hora_aula}:00` })
-      toast('Agendamento criado com sucesso!')
+      toast('Agendamento criado!')
       handleCloseCreate()
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao criar agendamento'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao criar agendamento'), 'error') }
   }
 
   async function handleUpdate(values: Omit<Agendamento, 'id'>) {
@@ -110,9 +102,7 @@ function AppContent() {
       await update.mutateAsync({ id: editTarget.id, payload: { ...values, hora_aula: `${values.hora_aula}:00` } })
       toast('Agendamento atualizado!')
       setEditTarget(null)
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao atualizar'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao atualizar'), 'error') }
   }
 
   async function handleDeleteAgendamento() {
@@ -121,29 +111,23 @@ function AppContent() {
       await remove.mutateAsync(deleteTarget.id)
       toast('Agendamento removido.')
       setDeleteTarget(null)
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao remover'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao remover'), 'error') }
   }
 
-  // ── Handlers Usuários ──────────────────────────────────────────────────────
+  // ── Usuário handlers ───────────────────────────────────────────────────────
   async function handleCreateUsuario(values: UsuarioPayload) {
     try {
       await createUsuario.mutateAsync(values)
-      toast('Usuário cadastrado com sucesso!')
+      toast('Aluno cadastrado!')
       setCreateUsuarioOpen(false)
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao cadastrar'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao cadastrar'), 'error') }
   }
 
   async function handleOpenEdit(masked: UsuarioMasked) {
     try {
       const full = await usuariosApi.get(masked.id)
       setEditUsuario(full)
-    } catch {
-      toast('Erro ao carregar dados do usuário', 'error')
-    }
+    } catch { toast('Erro ao carregar dados do aluno', 'error') }
   }
 
   async function handleUpdateUsuario(values: UsuarioPayload) {
@@ -151,230 +135,108 @@ function AppContent() {
     const payload: UsuarioUpdate = { nome: values.nome, email: values.email, telefone: values.telefone }
     try {
       await updateUsuario.mutateAsync({ id: editUsuario.id, payload })
-      toast('Usuário atualizado!')
+      toast('Aluno atualizado!')
       setEditUsuario(null)
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao atualizar'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao atualizar'), 'error') }
   }
 
   async function handleDeleteUsuario() {
     if (!deleteUsuario) return
     try {
       await deleteUsuarioMut.mutateAsync(deleteUsuario.id)
-      toast('Usuário removido.')
+      toast('Aluno removido.')
       setDeleteUsuario(null)
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro ao remover'), 'error')
-    }
+    } catch (e: unknown) { toast(errMsg(e, 'Erro ao remover'), 'error') }
   }
 
   async function handleToggleAtivo(u: UsuarioMasked) {
     try {
       await updateUsuario.mutateAsync({ id: u.id, payload: { ativo: !u.ativo } })
-      toast(u.ativo ? 'Usuário desativado.' : 'Usuário reativado.')
-    } catch (e: unknown) {
-      toast(errMsg(e, 'Erro'), 'error')
-    }
+      toast(u.ativo ? 'Aluno desativado.' : 'Aluno reativado.')
+    } catch (e: unknown) { toast(errMsg(e, 'Erro'), 'error') }
   }
 
-  // ── Tabs principais (sem Usuários — restrito ao admin) ─────────────────────
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'calendario',   label: 'Calendário',   icon: <CalendarRange size={16} /> },
-    { id: 'agendamentos', label: 'Agendamentos', icon: <List size={16} /> },
-    { id: 'admin',        label: 'Admin',        icon: <ShieldCheck size={16} /> },
-  ]
-
-  const isAdminUsuarios = tab === 'admin' && isAdmin && adminSubTab === 'usuarios'
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Car size={16} className="text-white" />
-            </div>
-            <div>
-              <span className="font-bold text-slate-900 text-base leading-none">AutoEscola dos Brothers</span>
-              <p className="text-xs text-slate-400 leading-none mt-0.5">Sistema de Agendamentos</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button onClick={logout} aria-label="Sair do admin" className="btn-ghost text-slate-500 text-xs gap-1">
-                <LogOut size={14} />
-                <span className="hidden sm:inline">Sair do admin</span>
-              </button>
-            )}
-            {isAdminUsuarios ? (
-              <button onClick={() => setCreateUsuarioOpen(true)} className="btn-primary">
-                <UserPlus size={16} />
-                <span className="hidden sm:inline">Novo Usuário</span>
-                <span className="sm:hidden">Novo</span>
-              </button>
-            ) : (
-              <button onClick={() => setCreateOpen(true)} className="btn-primary">
-                <Plus size={16} />
-                <span className="hidden sm:inline">Novo Agendamento</span>
-                <span className="sm:hidden">Novo</span>
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <Sidebar
+        page={page}
+        onNavigate={setPage}
+        isAdmin={isAdmin}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-        {/* Tabs principais */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 border-t border-slate-100 overflow-x-auto">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                'flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                tab === t.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              )}
-            >
-              {t.icon}
-              {t.label}
-              {t.id === 'admin' && isAdmin && (
-                <span className="ml-1 w-2 h-2 rounded-full bg-green-500" title="Autenticado" />
-              )}
-            </button>
-          ))}
-        </div>
-      </header>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <TopBar
+          page={page}
+          isAdmin={isAdmin}
+          onMenuClick={() => setSidebarOpen(true)}
+          onLogout={logout}
+        />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="card p-5 flex items-center gap-4">
-            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-              <CalendarDays size={20} className="text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{all.length}</p>
-              <p className="text-xs text-slate-500 font-medium">Total de agendamentos</p>
-            </div>
-          </div>
-          <div className="card p-5 flex items-center gap-4">
-            <div className="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
-              <Clock size={20} className="text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{todayCount}</p>
-              <p className="text-xs text-slate-500 font-medium">Aulas hoje</p>
-            </div>
-          </div>
-          {/* Contagem de usuários só visível para admin autenticado */}
-          {isAdmin ? (
-            <div className="card p-5 flex items-center gap-4">
-              <div className="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
-                <Users size={20} className="text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{usuarios.length}</p>
-                <p className="text-xs text-slate-500 font-medium">Usuários cadastrados</p>
-              </div>
-            </div>
-          ) : (
-            <div className="card p-5 flex items-center gap-4 opacity-40 select-none">
-              <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                <ShieldCheck size={20} className="text-slate-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-400">Acesso restrito</p>
-                <p className="text-xs text-slate-400">Área do administrador</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-        {/* ── Calendário ──────────────────────────────────────────────────── */}
-        {tab === 'calendario' && (
-          <div className="card p-4">
-            <CalendarioRBC
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={setEditTarget}
-            />
-          </div>
-        )}
+            {/* ── Dashboard ─────────────────────────────────────────── */}
+            {page === 'dashboard' && <Dashboard />}
 
-        {/* ── Agendamentos ────────────────────────────────────────────────── */}
-        {tab === 'agendamentos' && (
-          <div className="card">
-            <div className="flex items-center justify-between gap-4 p-4 border-b border-slate-100">
-              <div className="flex-1">
-                <FilterBar filter={filter} onChange={setFilter} />
-              </div>
-              <button onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar agendamentos" className="btn-ghost shrink-0">
-                <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
-              </button>
-            </div>
-            {isError ? (
-              <div className="py-16 text-center text-red-500 text-sm">Não foi possível conectar à API.</div>
-            ) : (
-              <AgendamentoTable agendamentos={agendamentos} hasFilters={!!(filter.instrutor || filter.data_aula)} onEdit={setEditTarget} onDelete={setDeleteTarget} />
-            )}
-            {agendamentos.length > 0 && (
-              <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400">
-                {agendamentos.length} agendamento{agendamentos.length !== 1 ? 's' : ''}
+            {/* ── Calendário ────────────────────────────────────────── */}
+            {page === 'calendario' && (
+              <div className="card p-4">
+                <CalendarioRBC
+                  onSelectSlot={handleSelectSlot}
+                  onSelectEvent={setEditTarget}
+                />
               </div>
             )}
-          </div>
-        )}
 
-        {/* ── Admin ───────────────────────────────────────────────────────── */}
-        {tab === 'admin' && (
-          isAdmin ? (
-            <div className="card">
-              {/* Cabeçalho da área admin */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={18} className="text-green-600" />
-                  <h3 className="font-semibold text-slate-900">Painel Administrativo</h3>
+            {/* ── Agendamentos ──────────────────────────────────────── */}
+            {page === 'agendamentos' && (
+              <div className="card">
+                <div className="flex items-center justify-between gap-4 p-4 border-b border-slate-100">
+                  <div className="flex-1">
+                    <FilterBar filter={filter} onChange={setFilter} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar" className="btn-ghost shrink-0">
+                      <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
+                    </button>
+                    <button onClick={() => setCreateOpen(true)} className="btn-primary shrink-0">
+                      <Plus size={15} />
+                      <span className="hidden sm:inline">Novo</span>
+                    </button>
+                  </div>
                 </div>
-                <span className="badge bg-green-100 text-green-700">Admin ativo</span>
+                {isError ? (
+                  <div className="py-16 text-center text-red-500 text-sm">Não foi possível conectar à API.</div>
+                ) : (
+                  <AgendamentoTable
+                    agendamentos={agendamentos}
+                    hasFilters={!!(filter.instrutor || filter.data_aula)}
+                    onEdit={setEditTarget}
+                    onDelete={setDeleteTarget}
+                  />
+                )}
+                {agendamentos.length > 0 && (
+                  <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400">
+                    {agendamentos.length} agendamento{agendamentos.length !== 1 ? 's' : ''}
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* Sub-tabs: Disponibilidade | Usuários */}
-              <div className="flex gap-1 px-6 border-b border-slate-100">
-                {([
-                  { id: 'disponibilidade' as AdminSubTab, label: 'Disponibilidade', icon: <CalendarRange size={14} /> },
-                  { id: 'usuarios'        as AdminSubTab, label: 'Usuários',        icon: <Users size={14} /> },
-                ] as const).map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setAdminSubTab(s.id)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
-                      adminSubTab === s.id
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                    )}
-                  >
-                    {s.icon}
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Conteúdo: Disponibilidade */}
-              {adminSubTab === 'disponibilidade' && (
-                <div className="p-6">
-                  <p className="text-sm text-slate-500 mb-6">
-                    Clique em um dia para ver os horários. Clique em um slot para{' '}
-                    <strong>bloquear</strong> ou <strong>desbloquear</strong>.
-                    Slots com agendamentos não podem ser bloqueados.
-                  </p>
-                  <CalendarioMensal isAdmin adminToken={adminToken ?? ''} />
+            {/* ── Alunos ────────────────────────────────────────────── */}
+            {page === 'alunos' && (
+              <div className="card">
+                <div className="flex items-center justify-between gap-4 p-4 border-b border-slate-100">
+                  <h2 className="text-sm font-semibold text-slate-700">Alunos cadastrados</h2>
+                  {isAdmin && (
+                    <button onClick={() => setCreateUsuarioOpen(true)} className="btn-primary">
+                      <UserPlus size={15} />
+                      <span className="hidden sm:inline">Novo Aluno</span>
+                    </button>
+                  )}
                 </div>
-              )}
-
-              {/* Conteúdo: Usuários */}
-              {adminSubTab === 'usuarios' && (
                 <UsuarioTable
                   usuarios={usuarios}
                   busca={buscaUsuario}
@@ -383,15 +245,78 @@ function AppContent() {
                   onDelete={setDeleteUsuario}
                   onToggleAtivo={handleToggleAtivo}
                 />
-              )}
-            </div>
-          ) : (
-            <AdminLoginModal onLogin={login} loading={adminLoading} error={adminError} />
-          )
-        )}
-      </main>
+              </div>
+            )}
 
-      {/* ── Modals Agendamentos ──────────────────────────────────────────── */}
+            {/* ── Instrutores ───────────────────────────────────────── */}
+            {page === 'instrutores' && (
+              <InstrutoresPage isAdmin={isAdmin} adminToken={adminToken ?? ''} />
+            )}
+
+            {/* ── Veículos ──────────────────────────────────────────── */}
+            {page === 'veiculos' && (
+              <VeiculosPage isAdmin={isAdmin} adminToken={adminToken ?? ''} />
+            )}
+
+            {/* ── Módulos em breve ──────────────────────────────────── */}
+            {page === 'financeiro'  && <ComingSoon module="Financeiro" />}
+            {page === 'pedagogico'  && <ComingSoon module="Pedagógico" />}
+            {page === 'comunicacao' && <ComingSoon module="Comunicação" />}
+            {page === 'relatorios'  && <ComingSoon module="Relatórios" />}
+
+            {/* ── Admin ─────────────────────────────────────────────── */}
+            {page === 'admin' && (
+              isAdmin ? (
+                <div className="card">
+                  <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-900">Painel de Disponibilidade</h3>
+                    <span className="badge bg-green-100 text-green-700">Admin ativo</span>
+                  </div>
+                  {/* Sub-tabs */}
+                  <div className="flex gap-1 px-6 border-b border-slate-100">
+                    {(['disponibilidade', 'usuarios'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setAdminSubTab(s)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize',
+                          adminSubTab === s
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                        )}
+                      >
+                        {s === 'disponibilidade' ? 'Disponibilidade' : 'Usuários'}
+                      </button>
+                    ))}
+                  </div>
+                  {adminSubTab === 'disponibilidade' && (
+                    <div className="p-6">
+                      <p className="text-sm text-slate-500 mb-6">
+                        Clique em um dia para ver os horários. Clique em um slot para <strong>bloquear</strong> ou <strong>desbloquear</strong>.
+                      </p>
+                      <CalendarioMensal isAdmin adminToken={adminToken ?? ''} />
+                    </div>
+                  )}
+                  {adminSubTab === 'usuarios' && (
+                    <UsuarioTable
+                      usuarios={usuarios}
+                      busca={buscaUsuario}
+                      onBuscaChange={setBuscaUsuario}
+                      onEdit={handleOpenEdit}
+                      onDelete={setDeleteUsuario}
+                      onToggleAtivo={handleToggleAtivo}
+                    />
+                  )}
+                </div>
+              ) : (
+                <AdminLoginModal onLogin={login} loading={adminLoading} error={adminError} />
+              )
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* ── Modals Agendamentos ──────────────────────────────────────── */}
       <Modal open={createOpen} onClose={handleCloseCreate} title="Novo Agendamento">
         <AgendamentoForm slotDefault={slotDefault} loading={create.isPending} onSubmit={handleCreate} onCancel={handleCloseCreate} />
       </Modal>
@@ -400,11 +325,11 @@ function AppContent() {
       </Modal>
       <DeleteDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDeleteAgendamento} loading={remove.isPending} aluno={deleteTarget?.aluno ?? ''} />
 
-      {/* ── Modals Usuários ──────────────────────────────────────────────── */}
-      <Modal open={createUsuarioOpen} onClose={() => setCreateUsuarioOpen(false)} title="Cadastrar Usuário">
+      {/* ── Modals Alunos ────────────────────────────────────────────── */}
+      <Modal open={createUsuarioOpen} onClose={() => setCreateUsuarioOpen(false)} title="Cadastrar Aluno">
         <UsuarioForm loading={createUsuario.isPending} onSubmit={handleCreateUsuario} onCancel={() => setCreateUsuarioOpen(false)} />
       </Modal>
-      <Modal open={!!editUsuario} onClose={() => setEditUsuario(null)} title="Editar Usuário">
+      <Modal open={!!editUsuario} onClose={() => setEditUsuario(null)} title="Editar Aluno">
         <UsuarioForm initial={editUsuario ?? undefined} loading={updateUsuario.isPending} onSubmit={handleUpdateUsuario} onCancel={() => setEditUsuario(null)} />
       </Modal>
       <DeleteDialog open={!!deleteUsuario} onClose={() => setDeleteUsuario(null)} onConfirm={handleDeleteUsuario} loading={deleteUsuarioMut.isPending} aluno={deleteUsuario?.nome ?? ''} />

@@ -131,6 +131,92 @@ class UsuarioOutMasked(BaseModel):
         )
 
 
+# ── Instrutores ───────────────────────────────────────────────────────────────
+
+class InstrutorBase(BaseModel):
+    nome: str
+    cpf: str
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    categorias: str = "B"
+
+    @field_validator("cpf")
+    @classmethod
+    def validar_cpf(cls, v: str) -> str:
+        return _validar_cpf(v)
+
+    @field_validator("categorias")
+    @classmethod
+    def validar_categorias(cls, v: str) -> str:
+        validas = set("ABCDE")
+        partes = [c.strip().upper() for c in v.split(",") if c.strip()]
+        if not partes or not all(p in validas for p in partes):
+            raise ValueError("Categorias inválidas. Use A, B, C, D ou E separados por vírgula.")
+        return ",".join(sorted(set(partes)))
+
+
+class InstrutorCreate(InstrutorBase):
+    pass
+
+
+class InstrutorUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    categorias: Optional[str] = None
+    ativo: Optional[bool] = None
+
+
+class InstrutorOut(InstrutorBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    ativo: bool
+    criado_em: datetime
+
+
+# ── Veículos ──────────────────────────────────────────────────────────────────
+
+class VeiculoBase(BaseModel):
+    placa: str
+    modelo: str
+    marca: str
+    ano: Optional[int] = None
+    categoria: str = "B"
+    km_atual: int = 0
+
+    @field_validator("placa")
+    @classmethod
+    def normalizar_placa(cls, v: str) -> str:
+        return v.strip().upper()
+
+    @field_validator("categoria")
+    @classmethod
+    def validar_categoria(cls, v: str) -> str:
+        if v.upper() not in {"A", "B", "C", "D", "E"}:
+            raise ValueError("Categoria deve ser A, B, C, D ou E.")
+        return v.upper()
+
+
+class VeiculoCreate(VeiculoBase):
+    pass
+
+
+class VeiculoUpdate(BaseModel):
+    modelo: Optional[str] = None
+    marca: Optional[str] = None
+    ano: Optional[int] = None
+    categoria: Optional[str] = None
+    ativo: Optional[bool] = None
+    km_atual: Optional[int] = None
+
+
+class VeiculoOut(VeiculoBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    ativo: bool
+    criado_em: datetime
+
+
 # ── Disponibilidade ───────────────────────────────────────────────────────────
 
 class SlotStatus(BaseModel):
