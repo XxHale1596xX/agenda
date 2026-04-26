@@ -40,6 +40,7 @@ class Usuario(Base):
     email = Column(String(120), nullable=True)
     telefone = Column(String(20), nullable=True)
     ativo = Column(Boolean, nullable=False, default=True)
+    senha_hash = Column(String(128), nullable=True)   # None = conta não ativada pelo aluno
     criado_em = Column(DateTime, nullable=False, server_default=func.now())
 
 

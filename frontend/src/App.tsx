@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { Plus, UserPlus, RefreshCw } from 'lucide-react'
-import { ToastProvider, useToast } from './components/ui/Toast'
+import { useToast } from './components/ui/Toast'
 import { Modal } from './components/ui/Modal'
 import { Sidebar } from './components/layout/Sidebar'
 import { TopBar } from './components/layout/TopBar'
@@ -38,12 +37,7 @@ export type NavPage =
   | 'financeiro' | 'pedagogico' | 'comunicacao' | 'relatorios'
   | 'admin'
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
-})
-
-// ── Inner app (inside providers) ─────────────────────────────────────────────
-function AppContent() {
+export default function AppContent() {
   const { toast } = useToast()
   const [page, setPage] = useState<NavPage>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -337,12 +331,3 @@ function AppContent() {
   )
 }
 
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </QueryClientProvider>
-  )
-}

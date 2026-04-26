@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.database import engine
 from app import models
-from app.routers import agendamentos, bloqueios, disponibilidade, usuarios, instrutores, veiculos
+from app.routers import agendamentos, bloqueios, disponibilidade, usuarios, instrutores, veiculos, auth
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -112,3 +112,4 @@ app.include_router(disponibilidade.router)
 app.include_router(usuarios.router)
 app.include_router(instrutores.router)
 app.include_router(veiculos.router)
+app.include_router(auth.router)
