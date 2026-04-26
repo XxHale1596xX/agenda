@@ -16,6 +16,7 @@ export default defineConfig({
       '/instrutores': apiTarget,
       '/veiculos': apiTarget,
       '/auth': apiTarget,
+      '/instrutor': apiTarget,
       '/health': apiTarget,
     },
   },

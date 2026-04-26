@@ -217,6 +217,25 @@ class VeiculoOut(VeiculoBase):
     criado_em: datetime
 
 
+# ── Disponibilidade do Instrutor ─────────────────────────────────────────────
+
+class DisponibilidadeInstrutorCreate(BaseModel):
+    data: date
+    hora: time
+
+
+class DisponibilidadeInstrutorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    instrutor_id: int
+    data: date
+    hora: time
+
+
+class DisponibilidadeBatchCreate(BaseModel):
+    slots: list[DisponibilidadeInstrutorCreate]
+
+
 # ── Disponibilidade ───────────────────────────────────────────────────────────
 
 class SlotStatus(BaseModel):

@@ -52,9 +52,24 @@ class Instrutor(Base):
     cpf = Column(String(11), nullable=False, unique=True, index=True)
     email = Column(String(120), nullable=True)
     telefone = Column(String(20), nullable=True)
-    categorias = Column(String(10), nullable=False, default="B")   # ex: "B" ou "A,B"
+    categorias = Column(String(10), nullable=False, default="B")
     ativo = Column(Boolean, nullable=False, default=True)
+    senha_hash = Column(String(128), nullable=True)
     criado_em = Column(DateTime, nullable=False, server_default=func.now())
+
+
+class DisponibilidadeInstrutor(Base):
+    __tablename__ = "disponibilidade_instrutor"
+
+    id = Column(Integer, primary_key=True, index=True)
+    instrutor_id = Column(Integer, nullable=False, index=True)
+    data = Column(Date, nullable=False)
+    hora = Column(Time, nullable=False)
+    criado_em = Column(DateTime, nullable=False, server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("instrutor_id", "data", "hora", name="uq_disp_inst_data_hora"),
+    )
 
 
 class Veiculo(Base):
