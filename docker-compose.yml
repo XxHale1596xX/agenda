@@ -24,7 +24,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: mysql+pymysql://agenda:agenda@mysql:3306/agenda
-      ADMIN_TOKEN: admin123
+      ADMIN_TOKEN: your-admin-token
     volumes:
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
