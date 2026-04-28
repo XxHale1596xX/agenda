@@ -179,7 +179,7 @@ export function LandingPage() {
       <footer className="border-t border-slate-100 py-8 text-center text-sm text-slate-400">
         © {new Date().getFullYear()} AutoEscola dos Brothers. Todos os direitos reservados.
         <span className="mx-3">·</span>
-        <Link to="/admin" className="hover:text-slate-600 transition">Área administrativa</Link>
+        <Link to="/entrar-admin" className="hover:text-slate-600 transition">Área administrativa</Link>
       </footer>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { Plus, UserPlus, RefreshCw } from 'lucide-react'
 import { useToast } from './components/ui/Toast'
@@ -39,11 +40,17 @@ export type NavPage =
 
 export default function AppContent() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [page, setPage] = useState<NavPage>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // ── Admin ──────────────────────────────────────────────────────────────────
-  const { adminToken, isAdmin, login, logout, loading: adminLoading, error: adminError } = useAdminSession()
+  const { adminToken, isAdmin, login, logout: _logout, loading: adminLoading, error: adminError } = useAdminSession()
+
+  function logout() {
+    _logout()
+    navigate('/entrar-admin', { replace: true })
+  }
   type AdminSubTab = 'disponibilidade' | 'usuarios'
   const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('disponibilidade')
 

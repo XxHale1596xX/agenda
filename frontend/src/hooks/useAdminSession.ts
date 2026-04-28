@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { bloqueiosApi } from '../api/bloqueios'
 
+const SESSION_KEY = 'admin_token'
+
 export function useAdminSession() {
-  const [adminToken, setAdminToken] = useState<string | null>(null)
+  const [adminToken, setAdminToken] = useState<string | null>(
+    () => sessionStorage.getItem(SESSION_KEY),
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -11,6 +15,7 @@ export function useAdminSession() {
     setError(null)
     try {
       await bloqueiosApi.validateAdmin(password)
+      sessionStorage.setItem(SESSION_KEY, password)
       setAdminToken(password)
     } catch {
       setError('Senha incorreta.')
@@ -20,6 +25,7 @@ export function useAdminSession() {
   }
 
   function logout() {
+    sessionStorage.removeItem(SESSION_KEY)
     setAdminToken(null)
   }
 
