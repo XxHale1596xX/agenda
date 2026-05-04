@@ -1,4 +1,4 @@
-app.scaleopsolutions.com {
+{$CADDY_HOST} {
     @api path /agendamentos* /bloqueios* /disponibilidade* /usuarios* /instrutores* /veiculos* /auth* /instrutor* /health*
     reverse_proxy @api api:8000
     reverse_proxy * frontend:5173

@@ -55,6 +55,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      CADDY_HOST: ${CADDY_HOST:-:80}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
