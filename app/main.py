@@ -37,6 +37,8 @@ audit = logging.getLogger("audit")
 _raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
 ALLOWED_ORIGINS = [o.strip() for o in _raw.split(",") if o.strip()]
 
+_docs_enabled = os.getenv("DOCS_ENABLED", "false").lower() == "true"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,8 +51,9 @@ app = FastAPI(
     title="Agenda — Autoescola",
     description="API de agendamento de aulas para autoescola.",
     version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
     lifespan=lifespan,
 )
 

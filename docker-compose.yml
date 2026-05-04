@@ -3,42 +3,43 @@ services:
     image: mysql:8.0
     container_name: agenda-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: agenda
-      MYSQL_USER: agenda
-      MYSQL_PASSWORD: agenda
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-agenda}
+      MYSQL_USER: ${MYSQL_USER:-agenda}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uagenda", "-pagenda"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER:-agenda}", "-p${MYSQL_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: unless-stopped
 
   api:
     build: .
     container_name: agenda-api
-    ports:
-      - "8000:8000"
     environment:
-      DATABASE_URL: mysql+pymysql://agenda:agenda@mysql:3306/agenda
-      ADMIN_TOKEN: your-admin-token
+      DATABASE_URL: ${DATABASE_URL}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      ADMIN_TOKEN_HASH: ${ADMIN_TOKEN_HASH:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DOCS_ENABLED: ${DOCS_ENABLED:-false}
     volumes:
       - ./app:/app/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
       mysql:
         condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: agenda-frontend
-    ports:
-      - "5173:5173"
     environment:
       API_TARGET: http://api:8000
       VITE_API_URL: ""
@@ -46,9 +47,29 @@ services:
       - ./frontend/src:/app/src
     depends_on:
       - api
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: agenda-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
 
 volumes:
   mysql_data:
     driver: local
   agenda_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
     driver: local
